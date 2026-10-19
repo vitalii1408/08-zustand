@@ -1,15 +1,12 @@
 'use client';
 
 import { ErrorMessage, Field, Form, Formik } from 'formik';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Yup from 'yup';
 import { createNote } from '@/lib/api';
 import type { NoteTag } from '@/types/note';
 import css from './NoteForm.module.css';
-
-interface NoteFormProps {
-  onClose: () => void;
-}
 
 interface NoteFormValues {
   title: string;
@@ -34,14 +31,15 @@ const validationSchema = Yup.object({
   tag: Yup.string().oneOf(tags, 'Invalid tag').required('Tag is required'),
 });
 
-export default function NoteForm({ onClose }: NoteFormProps) {
+export default function NoteForm() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      onClose();
+      router.push('/notes/filter/all');
     },
   });
 
@@ -87,7 +85,11 @@ export default function NoteForm({ onClose }: NoteFormProps) {
         </div>
 
         <div className={css.actions}>
-          <button type="button" className={css.cancelButton} onClick={onClose}>
+          <button
+            type="button"
+            className={css.cancelButton}
+            onClick={() => router.back()}
+          >
             Cancel
           </button>
           <button
