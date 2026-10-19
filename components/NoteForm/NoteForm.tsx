@@ -1,35 +1,12 @@
 'use client';
 
-import { ErrorMessage, Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import * as Yup from 'yup';
 import { createNote } from '@/lib/api';
 import type { NoteTag } from '@/types/note';
 import css from './NoteForm.module.css';
 
-interface NoteFormValues {
-  title: string;
-  content: string;
-  tag: NoteTag;
-}
-
 const tags: NoteTag[] = ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'];
-
-const initialValues: NoteFormValues = {
-  title: '',
-  content: '',
-  tag: 'Todo',
-};
-
-const validationSchema = Yup.object({
-  title: Yup.string()
-    .min(3, 'Title must be at least 3 characters')
-    .max(50, 'Title must be at most 50 characters')
-    .required('Title is required'),
-  content: Yup.string().max(500, 'Content must be at most 500 characters'),
-  tag: Yup.string().oneOf(tags, 'Invalid tag').required('Tag is required'),
-});
 
 export default function NoteForm() {
   const router = useRouter();
@@ -43,64 +20,63 @@ export default function NoteForm() {
     },
   });
 
-  const handleSubmit = (values: NoteFormValues) => {
-    mutate(values);
+  const handleSubmit = (formData: FormData) => {
+    mutate({
+      title: formData.get('title') as string,
+      content: formData.get('content') as string,
+      tag: formData.get('tag') as NoteTag,
+    });
   };
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={validationSchema}
-      onSubmit={handleSubmit}
-    >
-      <Form className={css.form}>
-        <div className={css.formGroup}>
-          <label htmlFor="title">Title</label>
-          <Field id="title" type="text" name="title" className={css.input} />
-          <ErrorMessage name="title" component="span" className={css.error} />
-        </div>
+    <form className={css.form} action={handleSubmit}>
+      <div className={css.formGroup}>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          name="title"
+          className={css.input}
+          required
+          minLength={3}
+          maxLength={50}
+        />
+      </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor="content">Content</label>
-          <Field
-            as="textarea"
-            id="content"
-            name="content"
-            rows={8}
-            className={css.textarea}
-          />
-          <ErrorMessage name="content" component="span" className={css.error} />
-        </div>
+      <div className={css.formGroup}>
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          name="content"
+          rows={8}
+          className={css.textarea}
+          maxLength={500}
+        />
+      </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor="tag">Tag</label>
-          <Field as="select" id="tag" name="tag" className={css.select}>
-            {tags.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </Field>
-          <ErrorMessage name="tag" component="span" className={css.error} />
-        </div>
+      <div className={css.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select id="tag" name="tag" className={css.select} required>
+          {tags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <div className={css.actions}>
-          <button
-            type="button"
-            className={css.cancelButton}
-            onClick={() => router.back()}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className={css.submitButton}
-            disabled={isPending}
-          >
-            Create note
-          </button>
-        </div>
-      </Form>
-    </Formik>
+      <div className={css.actions}>
+        <button
+          type="button"
+          className={css.cancelButton}
+          onClick={() => router.back()}
+        >
+          Cancel
+        </button>
+        <button type="submit" className={css.submitButton} disabled={isPending}>
+          Create note
+        </button>
+      </div>
+    </form>
   );
 }
